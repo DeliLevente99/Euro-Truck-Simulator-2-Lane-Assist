@@ -1,6 +1,10 @@
 using Hexa.NET.ImGui;
 using Avalonia.Data;
 
+# if WINDOWS
+using System.Runtime.InteropServices;
+# endif
+
 namespace ETS2LA.Overlay
 {
     public struct WindowDefinition
@@ -26,6 +30,22 @@ namespace ETS2LA.Overlay
         public struct WindowRect { public int X, Y, Width, Height; }
 
         #if WINDOWS
+            [StructLayout(LayoutKind.Sequential)]
+            public struct RECT
+            {
+                public int Left;
+                public int Top;
+                public int Right;
+                public int Bottom;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            public struct POINT
+            {
+                public int X;
+                public int Y;
+            }
+
             [DllImport("user32.dll", SetLastError = true)]
             static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 

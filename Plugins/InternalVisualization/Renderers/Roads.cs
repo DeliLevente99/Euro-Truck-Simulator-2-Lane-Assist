@@ -53,7 +53,7 @@ public class RoadsRenderer : Renderer
         {
             if (invalidRoadTypes.Contains(road.RoadType.ToString())) continue;
             if (road.RoadType.ToString() == "") continue;
-            //if (!road.ShowInUiMap) continue;
+            if (!road.ShowInUiMap) continue;
 
             ParsedRoad parsedRoad = new ParsedRoad(road);
             float resolution = RoadUtils.GetRoadResolution(road);

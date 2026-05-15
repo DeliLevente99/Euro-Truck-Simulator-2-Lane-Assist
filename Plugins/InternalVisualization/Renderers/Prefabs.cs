@@ -11,6 +11,8 @@ using TruckLib;
 using Avalonia.Controls;
 using TruckLib.Models.Ppd;
 using ETS2LA.Game.Utils;
+using System.Text;
+using Avalonia.Animation;
 
 namespace InternalVisualization.Renderers;
 
@@ -18,6 +20,15 @@ public class PrefabsRenderer : Renderer
 {
 
     private List<string> invalidPrefabTypes = new List<string>();
+
+    public Node GetMatchingNode(int controlNodeIndex, Prefab prefab, PrefabDescriptor ppd)
+    {
+        int newIndex = controlNodeIndex - prefab.Origin;
+        if (newIndex < 0)
+            newIndex += ppd.Nodes.Count;
+
+        return (Node)prefab.Nodes[newIndex];
+    }
 
     public override void Render(ImDrawListPtr drawList, Vector2 windowPos, Vector2 windowSize, 
                                 GameTelemetryData telemetryData, MapData mapData, Road[] roads, Prefab[] prefabs, IReadOnlyList<Node> nearbyNodes)
@@ -50,7 +61,7 @@ public class PrefabsRenderer : Renderer
         float resolution = 0.25f; // meters
         foreach (var prefab in nearbyPrefabs.Values)
         {
-            //if (!prefab.ShowInUiMap) continue;
+            if (!prefab.ShowInUiMap) continue;
             if (invalidPrefabTypes.Contains(prefab.Model.ToString())) continue;
 
             var ppd = PpdFileHandler.Current.GetPpdFile(prefab.Model.ToString());
@@ -112,7 +123,7 @@ public class PrefabsRenderer : Renderer
             // Render control nodes
             for(int i = 0; i < desc.Nodes.Count; i++)
             {
-                Node node = (Node)prefab.Nodes[i];
+                Node node = GetMatchingNode(i, prefab, desc);
                 Vector2 screenPos = Utils.WorldToScreen(node.Position, center.ToVector3(), windowSize) + windowPos;
                 drawList.AddCircleFilled(screenPos, 2 * InternalVisualizationConstants.Scale, ImGui.GetColorU32(new Vector4(1, 1, 1, 0.5f)));
                 drawList.AddText(screenPos + new Vector2(6, -6) * InternalVisualizationConstants.Scale, ImGui.GetColorU32(new Vector4(1, 1, 1, 0.5f)), i.ToString());
@@ -140,7 +151,7 @@ public class PrefabsRenderer : Renderer
                 for (int i = 0; i < desc.Nodes.Count; i++)
                 {
                     ControlNode node = desc.Nodes[i];
-                    ImGui.Text($"ControlNode: {i}");
+                    ImGui.Text($"ControlNode {i}");
                     ImGui.Indent();
                     ImGui.Text($"Input lines:");
                     ImGui.Indent();
@@ -160,6 +171,8 @@ public class PrefabsRenderer : Renderer
                     ImGui.Unindent();
                     ImGui.Unindent();
                 }
+                ImGui.Unindent();
+                ImGui.Unindent();
                 ImGui.Spacing();
                 ImGui.EndTooltip();
             }

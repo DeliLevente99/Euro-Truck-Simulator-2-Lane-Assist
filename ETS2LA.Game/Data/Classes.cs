@@ -564,11 +564,24 @@ public class ParsedPrefab : IParsedItem
         rotationMatrix = Matrix4x4.CreateRotationY(prefabRotation.Y, prefab.Nodes[0].Position);
     }
 
-    public int GetIndexForNode(Node node)
+    public ControlNode GetControlNodeForNode(Node node)
     {
         int index = Prefab.Nodes.IndexOf(node);
-        if (index == -1) throw new ArgumentException("Node is not part of this prefab");
-        return index;
+        int newIndex = index + Prefab.Origin;
+        if (newIndex >= Descriptor.Nodes.Count)
+            newIndex -= Descriptor.Nodes.Count;
+        
+        return Descriptor.Nodes[newIndex];
+    }
+
+    public Node GetNodeForControlNode(ControlNode node)
+    {
+        int index = Descriptor.Nodes.IndexOf(node);
+        int newIndex = index - Prefab.Origin;
+        if (newIndex < 0)
+            newIndex += Descriptor.Nodes.Count;
+        
+        return (Node)Prefab.Nodes[newIndex];
     }
 
     public Node GetNodeInCommon(ParsedPrefab other)
@@ -644,26 +657,24 @@ public class ParsedPrefab : IParsedItem
 
     public List<PrefabPath> GetPathsFromNodeToNode(Node startNode, Node endNode, out Direction dir)
     {
-        int startIndex = GetIndexForNode(startNode);
-        int endIndex = GetIndexForNode(endNode);
-
-        Logger.Info($"Start Index: {startIndex}, End Index: {endIndex}");
+        ControlNode startControlNode = GetControlNodeForNode(startNode);
+        ControlNode endControlNode = GetControlNodeForNode(endNode);
 
         // We extract the curve ids from Descriptor.ControlNode.Input/OutputLines
         // These match Prefab.Nodes in indices, so we can easily get the start and end using them
         List<int> startCurveIds;
         List<int> endCurveIds;
-        
-        startCurveIds = GetCurveIdsForControlNode(Descriptor.Nodes[startIndex], Direction.Forward);
+
+        startCurveIds = GetCurveIdsForControlNode(startControlNode, Direction.Forward);
         if (startCurveIds.Count == 0)
         {
-            startCurveIds = GetCurveIdsForControlNode(Descriptor.Nodes[startIndex], Direction.Backward);
-            endCurveIds = GetCurveIdsForControlNode(Descriptor.Nodes[endIndex], Direction.Forward);
+            startCurveIds = GetCurveIdsForControlNode(startControlNode, Direction.Backward);
+            endCurveIds = GetCurveIdsForControlNode(endControlNode, Direction.Forward);
             dir = Direction.Backward;
         }
         else
         {
-            endCurveIds = GetCurveIdsForControlNode(Descriptor.Nodes[endIndex], Direction.Backward);
+            endCurveIds = GetCurveIdsForControlNode(endControlNode, Direction.Backward);
             dir = Direction.Forward;
         }
 
